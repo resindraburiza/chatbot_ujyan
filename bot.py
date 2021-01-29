@@ -142,7 +142,7 @@ class MyBot(ActivityHandler):
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
 
-        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session):
+        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and len(turn_context.activity.text)!=8:
             await self.__send_intro_card(turn_context)
         
         # check test ID
