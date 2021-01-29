@@ -125,6 +125,12 @@ class MyBot(TeamsActivityHandler):
         self.conversation_data.answers[str(self.conversation_data.counter)] = {'q_id':q_id, 'ans':answer}
         await self.count_up()
 
+    async def check_collected_answer(self, turn_context: TurnContext):
+        if len(self.conversation_data.answers.keys()) == len(self.conversation_data.problem_set):
+            # print(self.conversation_data.answers.keys())
+            # print(len(self.conversation_data.problem_set))
+            await turn_context.send_activity("All questions have been answered. Please type 'submit' for submission.")
+
     async def on_message_activity(self, turn_context: TurnContext):
         # first and foremost, retreive data from memory state
         self.user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
@@ -196,10 +202,7 @@ class MyBot(TeamsActivityHandler):
             else:
                 await self.__send_question_card(turn_context)
 
-            if len(self.conversation_data.answers.keys()) == len(self.conversation_data.problem_set):
-                print(self.conversation_data.answers.keys())
-                print(len(self.conversation_data.problem_set))
-                await turn_context.send_activity("All questions have been answered. Please type 'submit' for submission.")
+            await self.check_collected_answer(turn_context)
         
         # start submission session
         elif not self.conversation_data.on_test_session and self.conversation_data.on_submit_session:
@@ -255,6 +258,7 @@ class MyBot(TeamsActivityHandler):
             await self.switch_on_test_session()
             await self.switch_on_submit_session()
             await self.__send_question_card(turn_context)
+            await self.check_collected_answer(turn_context)
 
     async def __send_question_card(self, turn_context: TurnContext):
         _fetch = self.conversation_data.problem_set[self.conversation_data.counter-1]
@@ -299,7 +303,7 @@ class MyBot(TeamsActivityHandler):
             title=f"Hello { self.user_profile.student_name }!",
             text="Welcome to the test-taking bot. "
             "To start the test, please reply with the 8-digits test ID "
-            "starting with hashtag mark (e.g., id7E4C6B9E). ",
+            "starting with 'id' as shown in the example (e.g., id7E4C6B9E). ",
         )
 
         return await turn_context.send_activity(
