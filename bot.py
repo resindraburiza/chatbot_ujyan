@@ -150,7 +150,9 @@ class MyBot(ActivityHandler):
             if len(test_id) != 8:
                 await turn_context.send_activity("Test ID should be 8-digits number. Please re-enter the test ID.")
             else:
+                await turn_context.send_activity("getting the problem")
                 status, to_parse = await self.get_problems(test_id)
+                await turn_context.send_activity(f"{ status }")
                 if status == 404:
                     await turn_context.send_activity(f"Test ID of {test_id} is not found. Please insert the correct test ID.")
                 else:
