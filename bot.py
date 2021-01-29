@@ -147,7 +147,8 @@ class MyBot(ActivityHandler):
         
         # check test ID
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and str(turn_context.activity.text)[0]=='#':
-            test_id = str(turn_context.activity.text)[1:]
+            # test_id = str(turn_context.activity.text)[1:]
+            test_id = '7E4C6B9E'
             # if test_id == '#7E4C6B9E':
             if len(test_id) == 8:
                 await turn_context.send_activity("getting the problem")
