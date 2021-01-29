@@ -144,7 +144,7 @@ class MyBot(ActivityHandler):
             await self.__send_registration_card(turn_context)
 
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and str(turn_context.activity.text)[:2]!='id':
-            await turn_context.send_activity(f"{ turn_context.activity.text[:2] }")
+            await turn_context.send_activity(f"{ str(turn_context.activity.text)[:2] }")
             await self.__send_intro_card(turn_context)
         
         # check test ID
