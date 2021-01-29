@@ -267,7 +267,7 @@ class MyBot(TeamsActivityHandler):
         _choices = _fetch['options']
         _button = []
         for _this in _choices:
-            _button.append(CardAction(type=ActionTypes.message_back, title=_this['value'], value={'q_id':_question_id, 'ans':_this['key'].upper(), 'msg':f"Answered with '{ _this['value'] }'."}))
+            _button.append(CardAction(type=ActionTypes.message_back, title=_this['key']+'. '+_this['value'], value={'q_id':_question_id, 'ans':_this['key'].upper(), 'msg':f"Answered with '{ _this['value'] }'."}))
         if self.conversation_data.counter != 1: _button.append(CardAction(type=ActionTypes.message_back, title='Back', value={'q_id':None, 'ans':'back'.upper(),'msg':None}))
         if self.conversation_data.counter != len(self.conversation_data.problem_set): _button.append(CardAction(type=ActionTypes.message_back, title='Next', value={'q_id':None, 'ans':'next'.upper(),'msg':None}))
         card = HeroCard(
