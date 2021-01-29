@@ -168,7 +168,7 @@ class MyBot(TeamsActivityHandler):
         # start test session
         elif self.conversation_data.on_test_session and not self.conversation_data.on_submit_session:
             if turn_context.activity.text is not None:
-                if turn_context.activity.text.lower() == 'submit':
+                if turn_context.activity.text.strip().lower() == 'submit':
                     await self.switch_on_test_session()
                     await self.switch_on_submit_session()
                     await self.__on_submit_activity(turn_context)
@@ -223,13 +223,13 @@ class MyBot(TeamsActivityHandler):
         # except:
         #     pass
         if turn_context.activity.text is not None:
-            self.user_profile.student_name = turn_context.activity.text
+            self.user_profile.student_name = turn_context.activity.text.strip()
             card = HeroCard(
                 title="Your name is:",
                 text=f"{ self.user_profile.student_name }",
                 buttons=[
-                    CardAction(type=ActionTypes.message_back, title='Yes', value=json.dumps({'ans': 'True'})),
-                    CardAction(type=ActionTypes.message_back, title='No', value=json.dumps({'ans': 'False'}))
+                    CardAction(type=ActionTypes.message_back, title='Yes', value={'ans': 'True'}),
+                    CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
                 ]
             )
 
@@ -248,10 +248,10 @@ class MyBot(TeamsActivityHandler):
     async def __on_submit_activity(self, turn_context: TurnContext):
         if turn_context.activity.value is None:
             await self.__send_submit_card(turn_context)
-        elif turn_context.activity.value == 'SUBMIT':
+        elif turn_context.activity.value['ans'] == 'SUBMIT':
             await self.reset_and_submit()
             await turn_context.send_activity("Your answer has been recorded.")
-        elif turn_context.activity.value == 'CANCEL':
+        elif turn_context.activity.value['ans'] == 'CANCEL':
             await self.switch_on_test_session()
             await self.switch_on_submit_session()
             await self.__send_question_card(turn_context)
@@ -287,8 +287,8 @@ class MyBot(TeamsActivityHandler):
             title="Here are your test summary: ",
             text=_text,
             buttons=[
-                CardAction(type=ActionTypes.message_back, title='Submit', value='submit'.upper()),
-                CardAction(type=ActionTypes.message_back, title='Cancel', value='cancel'.upper())
+                CardAction(type=ActionTypes.message_back, title='Submit', value={'ans':'submit'.upper()}),
+                CardAction(type=ActionTypes.message_back, title='Cancel', value={'ans':'cancel'.upper()})
             ]
         )
 
