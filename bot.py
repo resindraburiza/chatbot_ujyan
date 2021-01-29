@@ -219,8 +219,8 @@ class MyBot(ActivityHandler):
                 title="Your name is:",
                 text=f"{ self.user_profile.student_name }",
                 buttons=[
-                    CardAction(type=ActionTypes.message_back, title='Yes', value=True),
-                    CardAction(type=ActionTypes.message_back, title='No', value=False)
+                    CardAction(type=ActionTypes.message_back, title='Yes', value="True"),
+                    CardAction(type=ActionTypes.message_back, title='No', value="False")
                 ]
             )
 
