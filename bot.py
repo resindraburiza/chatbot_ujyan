@@ -210,6 +210,7 @@ class MyBot(ActivityHandler):
                 await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
 
     async def __send_registration_card(self, turn_context: TurnContext):
+        turn_context.send_activity(f"activit value: {turn_context.activity.value}")
         if turn_context.activity.text is not None:
             self.user_profile.student_name = turn_context.activity.text
             card = HeroCard(
