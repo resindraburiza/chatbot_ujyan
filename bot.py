@@ -133,6 +133,7 @@ class MyBot(ActivityHandler):
 
         # this is bad code practice with no meaning
         # but I will leave it here
+        await turn_context.send_activity(f"{ turn_context.activity.text }")
         if turn_context.activity.text is not None:
             user_input = turn_context.activity.text
         else:
@@ -141,12 +142,12 @@ class MyBot(ActivityHandler):
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
 
-        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and user_input[0]!='#':
+        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and turn_context.activity.text[0]!='#':
             await self.__send_intro_card(turn_context)
         
         # check test ID
-        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and user_input[0]=='#':
-            test_id = user_input[1:]
+        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and turn_context.activity.text[0]=='#':
+            test_id = turn_context.activity.text[1:]
             if len(test_id) != 8:
                 await turn_context.send_activity("Test ID should be 8-digits number. Please re-enter the test ID.")
             else:
