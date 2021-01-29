@@ -140,7 +140,7 @@ class MyBot(TeamsActivityHandler):
 
         # this is bad code practice with no meaning
         # but I will leave it here
-        await turn_context.send_activity(f"{ turn_context.activity.text }")
+        # await turn_context.send_activity(f"{ turn_context.activity.text }")
         # if turn_context.activity.text is not None:
         #     user_input = turn_context.activity.text
         # else:
@@ -150,22 +150,22 @@ class MyBot(TeamsActivityHandler):
             await self.__send_registration_card(turn_context)
 
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and turn_context.activity.text.strip()[:2]!='id':
-            await turn_context.send_activity(f"{ turn_context.activity.text.strip()[:2] }")
+            # await turn_context.send_activity(f"{ turn_context.activity.text.strip()[:2] }")
             await self.__send_intro_card(turn_context)
         
         # check test ID
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and turn_context.activity.text.strip()[:2]=='id':
             test_id = turn_context.activity.text.strip()[2:]
             if len(test_id) == 8:
-                await turn_context.send_activity("getting the problem")
+                await turn_context.send_activity("Fetching the requested test id...")
                 status, to_parse = await self.get_problems(test_id)
-                await turn_context.send_activity(f"{ status }")
+                # await turn_context.send_activity(f"{ status }")
                 if status == 404:
                     await turn_context.send_activity(f"Test ID of {test_id} is not found. Please insert the correct test ID.")
                 else:
                     await self.asign_test_ID(test_id)
                     await self.parse_problem_set(to_parse)
-                    await turn_context.send_activity(f"Test titled {to_parse['title'].capitalize()} is found. There are {len(self.conversation_data.problem_set)} question(s). To submit your question, type 'submit'. Please type anything to start the test.")
+                    await turn_context.send_activity(f"Test titled {to_parse['title'].capitalize()} is found. There are {len(self.conversation_data.problem_set)} question(s). To submit your answers, type 'submit'. Please type anything to start the test.")
                     await self.switch_on_test_session()
             else:
                 await turn_context.send_activity("Test ID should be 8-digits number. Please re-enter the test ID.")
