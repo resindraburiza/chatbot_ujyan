@@ -28,7 +28,7 @@ class MyBot(ActivityHandler):
         self.conversation_data = None
 
         # API endpoint
-        self.API_base = 'https://ujiyan-web-app.azurewebsites.net/'
+        self.API_base = 'https://ujiyan-webapp.azurewebsites.net/'
 
     # See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
 
@@ -293,7 +293,7 @@ class MyBot(ActivityHandler):
             title=f"Hello { self.user_profile.student_name }!",
             text="Welcome to the test-taking bot. "
             "To start the test, please reply with the 8-digits test ID "
-            "starting with hashtag mark (e.g., #EC2A5FB5). ",
+            "starting with hashtag mark (e.g., #7E4C6B9E). ",
         )
 
         return await turn_context.send_activity(
