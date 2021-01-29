@@ -229,7 +229,7 @@ class MyBot(ActivityHandler):
 
             await turn_context.send_activity(MessageFactory.attachment(CardFactory.hero_card(card)))
 
-        elif json.loads(turn_context.activity.value)['ans']=='True':
+        elif turn_context.activity.value['ans']=='True':
             await self.register_student()
             student_id = await self.get_student_id()
             await turn_context.send_activity(f"Registration complete. Welcome { self.user_profile.student_name }! Here is your student ID {student_id}.")
