@@ -127,9 +127,9 @@ class MyBot(ActivityHandler):
     async def on_message_activity(self, turn_context: TurnContext):
         # first and foremost, retreive data from memory state
         self.user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
-        user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
+        # user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
         self.conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
-        conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
+        # conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
 
         # this is bad code practice with no meaning
         # but I will leave it here
@@ -138,7 +138,7 @@ class MyBot(ActivityHandler):
         else:
             user_input = None
 
-        if not conversation_data.on_register_complete:
+        if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
 
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and user_input[0]!='#':
@@ -212,21 +212,24 @@ class MyBot(ActivityHandler):
                 await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
 
     async def __send_registration_card(self, turn_context: TurnContext):
-        await turn_context.send_activity(f"activit value: {turn_context.activity.value['ans']}")
+        # try:
+        #     await turn_context.send_activity(f"activit value: {json.loads(turn_context.activity.value)}")
+        # except:
+        #     pass
         if turn_context.activity.text is not None:
             self.user_profile.student_name = turn_context.activity.text
             card = HeroCard(
                 title="Your name is:",
                 text=f"{ self.user_profile.student_name }",
                 buttons=[
-                    CardAction(type=ActionTypes.message_back, title='Yes', value={'ans': 'True'}),
-                    CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
+                    CardAction(type=ActionTypes.message_back, title='Yes', value=json.dumps({'ans': 'True'})),
+                    CardAction(type=ActionTypes.message_back, title='No', value=json.dumps({'ans': 'False'}))
                 ]
             )
 
             await turn_context.send_activity(MessageFactory.attachment(CardFactory.hero_card(card)))
 
-        elif turn_context.activity.value['ans']:
+        elif json.loads(turn_context.activity.value)['ans']=='True':
             await self.register_student()
             student_id = await self.get_student_id()
             await turn_context.send_activity(f"Registration complete. Welcome { self.user_profile.student_name }! Here is your student ID {student_id}.")
