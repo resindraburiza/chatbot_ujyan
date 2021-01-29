@@ -134,10 +134,10 @@ class MyBot(ActivityHandler):
         # this is bad code practice with no meaning
         # but I will leave it here
         await turn_context.send_activity(f"{ turn_context.activity.text }")
-        if turn_context.activity.text is not None:
-            user_input = turn_context.activity.text
-        else:
-            user_input = None
+        # if turn_context.activity.text is not None:
+        #     user_input = turn_context.activity.text
+        # else:
+        #     user_input = None
 
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
@@ -147,7 +147,7 @@ class MyBot(ActivityHandler):
         
         # check test ID
         elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and turn_context.activity.text[0]=='#':
-            test_id = turn_context.activity.text[1:]
+            test_id = str(turn_context.activity.text)[1:]
             if len(test_id) == 8:
                 await turn_context.send_activity("getting the problem")
                 status, to_parse = await self.get_problems(test_id)
