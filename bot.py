@@ -142,13 +142,13 @@ class MyBot(ActivityHandler):
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
 
-        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and str(turn_context.activity.text)[0]!='#':
+        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session):
             await self.__send_intro_card(turn_context)
         
         # check test ID
-        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session) and str(turn_context.activity.text)[0]=='#':
-            # test_id = str(turn_context.activity.text)[1:]
-            test_id = '7E4C6B9E'
+        elif (not self.conversation_data.on_test_session and not self.conversation_data.on_submit_session):
+            test_id = str(turn_context.activity.text)
+            # test_id = '7E4C6B9E'
             # if test_id == '#7E4C6B9E':
             if len(test_id) == 8:
                 await turn_context.send_activity("getting the problem")
@@ -299,7 +299,7 @@ class MyBot(ActivityHandler):
             title=f"Hello { self.user_profile.student_name }!",
             text="Welcome to the test-taking bot. "
             "To start the test, please reply with the 8-digits test ID "
-            "starting with hashtag mark (e.g., #7E4C6B9E). ",
+            "starting with hashtag mark (e.g., 7E4C6B9E). ",
         )
 
         return await turn_context.send_activity(
