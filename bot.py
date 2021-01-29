@@ -212,21 +212,21 @@ class MyBot(ActivityHandler):
                 await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
 
     async def __send_registration_card(self, turn_context: TurnContext):
-        await turn_context.send_activity(f"activit value: {turn_context.activity.value}")
+        await turn_context.send_activity(f"activit value: {turn_context.activity.value['ans']}")
         if turn_context.activity.text is not None:
             self.user_profile.student_name = turn_context.activity.text
             card = HeroCard(
                 title="Your name is:",
                 text=f"{ self.user_profile.student_name }",
                 buttons=[
-                    CardAction(type=ActionTypes.message_back, title='Yes', value={"ans": "True"}),
-                    CardAction(type=ActionTypes.message_back, title='No', value={"ans": "False"})
+                    CardAction(type=ActionTypes.message_back, title='Yes', value={'ans': 'True'}),
+                    CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
                 ]
             )
 
             await turn_context.send_activity(MessageFactory.attachment(CardFactory.hero_card(card)))
 
-        elif turn_context.activity.value:
+        elif turn_context.activity.value['ans']:
             await self.register_student()
             student_id = await self.get_student_id()
             await turn_context.send_activity(f"Registration complete. Welcome { self.user_profile.student_name }! Here is your student ID {student_id}.")
