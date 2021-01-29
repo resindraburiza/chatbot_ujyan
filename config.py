@@ -11,5 +11,5 @@ class DefaultConfig:
     APP_ID = os.environ.get("MicrosoftAppId", "")
     APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "")
 
-    APP_ID_DEPLOY = 'bbf340f5-a48e-4a57-ba70-a0825e59202d'
+    APP_ID_DEPLOY = '0cbc76f7-7128-4ec7-bb2a-fd9427398088'
     APP_PASSWORD_DEPLOY = 'aac364bd-32ca-4484-ab4f-7ecc92a22f7b'
