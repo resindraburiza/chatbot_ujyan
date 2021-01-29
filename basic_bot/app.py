@@ -8,9 +8,12 @@ from datetime import datetime
 from aiohttp import web
 from aiohttp.web import Request, Response, json_response
 from botbuilder.core import (
-    BotFrameworkAdapterSettings,
-    TurnContext,
     BotFrameworkAdapter,
+    BotFrameworkAdapterSettings,
+    ConversationState,
+    MemoryStorage,
+    TurnContext,
+    UserState,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity, ActivityTypes
@@ -55,8 +58,13 @@ async def on_error(context: TurnContext, error: Exception):
 
 ADAPTER.on_turn_error = on_error
 
+# where the memory goes
+memory = MemoryStorage()
+user_state = UserState(memory)
+conversation_state = ConversationState(memory)
+
 # Create the Bot
-BOT = MyBot()
+BOT = MyBot(user_state, conversation_state)
 
 
 # Listen for incoming requests on /api/messages
