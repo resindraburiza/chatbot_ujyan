@@ -28,6 +28,9 @@ class MyBot(TeamsActivityHandler):
         self.user_profile = None
         self.conversation_data = None
 
+        # secret reset
+        self.reset = 'Ocy00Ulahd87wkKOiNAiKorFlViI2'
+
         # API endpoint
         self.API_base = 'https://ujiyan-webapp.azurewebsites.net/'
 
@@ -38,6 +41,21 @@ class MyBot(TeamsActivityHandler):
 
         await self.conversation_state.save_changes(turn_context)
         await self.user_state.save_changes(turn_context)
+
+    async def reset_all_state(self):
+        self.user_profile.student_id = None 
+        self.user_profile.student_name = None
+
+
+        self.conversation_data.problem_set = []
+        self.conversation_data.counter = 1
+        self.conversation_data.answers = {}
+        self.conversation_data.test_ID = ''
+        self.conversation_data.test_title = ''
+        self.conversation_data.on_test_session = False
+        self.conversation_data.on_submit_session = False
+        self.conversation_data.on_register_complete = False
+        self.conversation_data.on_complete_answer = False
 
     async def reset_and_submit(self):
         # aiohttp session
@@ -53,7 +71,7 @@ class MyBot(TeamsActivityHandler):
             answers.append({'answer':self.conversation_data.answers[_key]['ans'], 
                 'problem_id':self.conversation_data.answers[_key]['q_id']})
     
-        params = {'student_id':self.user_profile.student_ID, 'test_id':self.conversation_data.test_ID, 'submissions': answers}
+        params = {'student_id':self.user_profile.student_id, 'test_id':self.conversation_data.test_ID, 'submissions': answers}
         # print(submit_url)
         # print(params)
         resp = await session.post(submit_url, json=params)
@@ -106,11 +124,11 @@ class MyBot(TeamsActivityHandler):
         path = os.path.join(path,'students')
         async with session.post(path, json={'name':self.user_profile.student_name}) as resp:
             data = await resp.json()
-            self.user_profile.student_ID = data['id']
+            self.user_profile.student_id = data['id']
         await session.close()
 
     async def get_student_id(self):
-        return self.user_profile.student_ID
+        return self.user_profile.student_id
 
     async def count_up(self):
         self.conversation_data.counter = min(self.conversation_data.counter+1, len(self.conversation_data.problem_set))
@@ -145,6 +163,14 @@ class MyBot(TeamsActivityHandler):
         #     user_input = turn_context.activity.text
         # else:
         #     user_input = None
+
+        # special reset
+        if turn_context.activity.text is not None:
+            if turn_context.activity.text.strip() == self.reset:
+                await turn_context.send_activity("Resetting...")
+                await self.reset_all_state()
+                await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
+                return
 
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
