@@ -32,7 +32,7 @@ class MyBot(TeamsActivityHandler):
         self.reset = 'Ocy00Ulahd87wkKOiNAiKorFlViI2'
 
         # API endpoint
-        self.API_base = 'https://ujiyan-webapp.azurewebsites.net/'
+        self.API_base = 'https://project-ujiyan.azurewebsites.net/'
 
     # See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
 
@@ -56,6 +56,7 @@ class MyBot(TeamsActivityHandler):
         self.conversation_data.on_submit_session = False
         self.conversation_data.on_register_complete = False
         self.conversation_data.on_complete_answer = False
+        self.already_welcome = False
 
     async def reset_and_submit(self):
         # aiohttp session
@@ -164,6 +165,8 @@ class MyBot(TeamsActivityHandler):
         # else:
         #     user_input = None
 
+        # await turn_context.send_activity(f"{turn_context.activity.channel_id}")
+
         # special reset
         if turn_context.activity.text is not None:
             if turn_context.activity.text.strip() == self.reset:
@@ -171,6 +174,12 @@ class MyBot(TeamsActivityHandler):
                 await self.reset_all_state()
                 await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
                 return
+
+        # already welcomed or not?
+        if not self.conversation_data.already_welcome:
+            self.conversation_data.already_welcome = True
+            await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
+            return
 
         if not self.conversation_data.on_register_complete:
             await self.__send_registration_card(turn_context)
@@ -199,7 +208,7 @@ class MyBot(TeamsActivityHandler):
 
         # start test session
         elif self.conversation_data.on_test_session and not self.conversation_data.on_submit_session:
-            if turn_context.activity.text is not None:
+            if turn_context.activity.text is not None and turn_context.activity.value is None:
                 if turn_context.activity.text.strip().lower() == 'submit':
                     await self.switch_on_test_session()
                     await self.switch_on_submit_session()
@@ -211,9 +220,16 @@ class MyBot(TeamsActivityHandler):
                     await self.__send_question_card(turn_context)
             
             elif turn_context.activity.value is not None:
-                _answer = turn_context.activity.value['ans']
-                _context = turn_context.activity.value['msg']
-                _question_id = turn_context.activity.value['q_id']
+                if turn_context.activity.channel_id == 'line':
+                    _value = json.loads(turn_context.activity.value['data'])
+                elif turn_context.activity.channel_id == 'msteams':
+                    _value = turn_context.activity.value
+                else:
+                    _value = turn_context.activity.value
+
+                _answer = _value['ans']
+                _context = _value['msg']
+                _question_id = _value['q_id']
                 if _answer == 'BACK': 
                     await self.count_down()
                     await turn_context.send_activity("Here is the previous question")
@@ -221,7 +237,7 @@ class MyBot(TeamsActivityHandler):
                     await self.count_up()
                     await turn_context.send_activity("Here is the next question")
                 else:
-                    await turn_context.send_activity(f"Answered with { _context }")
+                    await turn_context.send_activity(f"{ _context }")
                     await self.update_collected_answer(_answer, _question_id)
                 await turn_context.send_activity(f"{len(self.conversation_data.answers.keys())}/{len(self.conversation_data.problem_set)} question(s) have been answered.")
                 await self.__send_question_card(turn_context)
@@ -242,8 +258,10 @@ class MyBot(TeamsActivityHandler):
         members_added: ChannelAccount,
         turn_context: TurnContext
     ):
+        self.conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
         for member_added in members_added:
             if member_added.id != turn_context.activity.recipient.id:
+                self.conversation_data.already_welcome = True
                 await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
 
     async def __send_registration_card(self, turn_context: TurnContext):
@@ -251,11 +269,24 @@ class MyBot(TeamsActivityHandler):
         #     await turn_context.send_activity(f"activit value: {json.loads(turn_context.activity.value)}")
         # except:
         #     pass
-        if turn_context.activity.text is not None:
+
+        # debug. but more like dafuk
+        # await turn_context.send_activity(f"{turn_context.activity.text}")
+        # await turn_context.send_activity(f"{turn_context.activity.value}")
+
+        # if turn_context.activity.value is not None:
+            # await turn_context.send_activity(f"{turn_context.activity.value}")
+            # await turn_context.send_activity(f"{turn_context.activity.value['data']}")
+            # aa = json.loads(turn_context.activity.value['data'])
+            # await turn_context.send_activity(f"{aa['ans']}")
+            # await turn_context.send_activity(f"{'ans' in aa}")
+            # await turn_context.send_activity(f"{aa['ans'] == 'False'}")
+
+        if turn_context.activity.text is not None and turn_context.activity.value is None:
             self.user_profile.student_name = turn_context.activity.text.strip()
             card = HeroCard(
                 title="Your name is:",
-                text=f"{ self.user_profile.student_name }",
+                text="{}".format(self.user_profile.student_name),
                 buttons=[
                     CardAction(type=ActionTypes.message_back, title='Yes', value={'ans': 'True'}),
                     CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
@@ -264,12 +295,22 @@ class MyBot(TeamsActivityHandler):
 
             await turn_context.send_activity(MessageFactory.attachment(CardFactory.hero_card(card)))
 
-        elif turn_context.activity.value['ans']=='True':
-            await self.register_student()
-            student_id = await self.get_student_id()
-            await turn_context.send_activity(f"Registration complete. Welcome { self.user_profile.student_name }! Here is your student ID {student_id}.")
-            self.conversation_data.on_register_complete = True
-            await self.__send_intro_card(turn_context)
+        elif turn_context.activity.value != None:
+            if turn_context.activity.channel_id == 'line':
+                ans = json.loads(turn_context.activity.value['data'])['ans']
+            elif turn_context.activity.channel_id == 'msteams':
+                ans = turn_context.activity.value['ans']
+            else:
+                ans = turn_context.activity.value['ans']
+
+            if ans == 'True':
+                await self.register_student()
+                student_id = await self.get_student_id()
+                await turn_context.send_activity(f"Registration complete. Welcome { self.user_profile.student_name }! Here is your student ID {student_id}.")
+                self.conversation_data.on_register_complete = True
+                await self.__send_intro_card(turn_context)
+            else:
+                await turn_context.send_activity("Please input your name")
 
         else:
             await turn_context.send_activity("Please input your name")
@@ -277,14 +318,22 @@ class MyBot(TeamsActivityHandler):
     async def __on_submit_activity(self, turn_context: TurnContext):
         if turn_context.activity.value is None:
             await self.__send_submit_card(turn_context)
-        elif turn_context.activity.value['ans'] == 'SUBMIT':
-            await self.reset_and_submit()
-            await turn_context.send_activity("Your answer has been recorded.")
-        elif turn_context.activity.value['ans'] == 'CANCEL':
-            await self.switch_on_test_session()
-            await self.switch_on_submit_session()
-            await self.__send_question_card(turn_context)
-            await self.check_collected_answer(turn_context)
+        else:
+            if turn_context.activity.channel_id == 'line':
+                _value = json.loads(turn_context.activity.value['data'])
+            elif turn_context.activity.channel_id == 'msteams':
+                _value = turn_context.activity.value
+            else:
+                _value = turn_context.activity.value
+
+            if _value['ans'] == 'SUBMIT':
+                await self.reset_and_submit()
+                await turn_context.send_activity("Your answer has been recorded.")
+            elif _value['ans'] == 'CANCEL':
+                await self.switch_on_test_session()
+                await self.switch_on_submit_session()
+                await self.__send_question_card(turn_context)
+                await self.check_collected_answer(turn_context)
 
     async def __send_question_card(self, turn_context: TurnContext):
         _fetch = self.conversation_data.problem_set[self.conversation_data.counter-1]
