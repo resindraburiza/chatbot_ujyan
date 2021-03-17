@@ -150,6 +150,43 @@ class MyBot(TeamsActivityHandler):
             # print(len(self.conversation_data.problem_set))
             await turn_context.send_activity("All questions have been answered. Please type 'submit' for submission.")
 
+    async def on_message_activity_commented(self, turn_context: TurnContext):
+        # first and foremost, retreive data from memory state
+        self.user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
+        # user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
+        self.conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
+        # conversation_data = await self.conversation_state_accessor.get(turn_context, ConversationData)
+
+        # already welcomed or not?
+        if not self.conversation_data.already_welcome:
+            self.conversation_data.already_welcome = True
+            await turn_context.send_activity("Hello and welcome to this test-taking chatbot! Please input your name to register.")
+            return
+
+        await turn_context.send_activity(f"{turn_context.activity.channel_id}")
+        await turn_context.send_activity(f"You said {turn_context.activity.text}")
+
+        if turn_context.activity.value is not None:
+            await turn_context.send_activity(f"Type {type(turn_context.activity.value)}")
+            _response = json.loads(turn_context.activity.value)
+            await turn_context.send_activity(f"Type {type(_response)}")
+            _response = _response['ans']
+
+            await turn_context.send_activity(f"The value {_response}")
+
+        card = HeroCard(
+                title="This is what you said:",
+                text="{}".format(turn_context.activity.text),
+                buttons=[
+                    CardAction(type=ActionTypes.message_back, title='Yes', text='Yes', value={'ans': 'False'}),
+                    CardAction(type=ActionTypes.message_back, title='Yes', text='No', display_text='What', value='Test'),
+                    CardAction(type=ActionTypes.message_back, title='Yes', text='{"ans":"False"}', display_text='Yes', value='Test')
+                    # CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
+                ]
+            )
+
+        await turn_context.send_activity(MessageFactory.attachment(CardFactory.hero_card(card)))
+
     async def on_message_activity(self, turn_context: TurnContext):
         # first and foremost, retreive data from memory state
         self.user_profile = await self.user_state_accessor.get(turn_context, UserProfile)
@@ -224,6 +261,8 @@ class MyBot(TeamsActivityHandler):
                     _value = json.loads(turn_context.activity.value['data'])
                 elif turn_context.activity.channel_id == 'msteams':
                     _value = turn_context.activity.value
+                elif turn_context.activity.channel_id == 'facebook':
+                    _value = json.loads(turn_context.activity.value)
                 else:
                     _value = turn_context.activity.value
 
@@ -288,8 +327,14 @@ class MyBot(TeamsActivityHandler):
                 title="Your name is:",
                 text="{}".format(self.user_profile.student_name),
                 buttons=[
-                    CardAction(type=ActionTypes.message_back, title='Yes', value={'ans': 'True'}),
-                    CardAction(type=ActionTypes.message_back, title='No', value={'ans': 'False'})
+                    CardAction(type=ActionTypes.message_back, title='Yes',
+                        display_text='Yes',
+                        text='{"ans":"True"}' if turn_context.activity.channel_id=='facebook' else None,
+                        value={'ans': 'True'}),
+                    CardAction(type=ActionTypes.message_back, title='No', 
+                        display_text='No',
+                        text='{"ans":"False"}' if turn_context.activity.channel_id=='facebook' else None,
+                        value={'ans': 'False'})
                 ]
             )
 
@@ -300,6 +345,8 @@ class MyBot(TeamsActivityHandler):
                 ans = json.loads(turn_context.activity.value['data'])['ans']
             elif turn_context.activity.channel_id == 'msteams':
                 ans = turn_context.activity.value['ans']
+            elif turn_context.activity.channel_id == 'facebook':
+                ans = json.loads(turn_context.activity.value)['ans']
             else:
                 ans = turn_context.activity.value['ans']
 
@@ -342,9 +389,25 @@ class MyBot(TeamsActivityHandler):
         _choices = _fetch['options']
         _button = []
         for _this in _choices:
-            _button.append(CardAction(type=ActionTypes.message_back, title=_this['key']+'. '+_this['value'], value={'q_id':_question_id, 'ans':_this['key'].upper(), 'msg':f"Answered with '{ _this['value'] }'."}))
-        if self.conversation_data.counter != 1: _button.append(CardAction(type=ActionTypes.message_back, title='Back', value={'q_id':None, 'ans':'back'.upper(),'msg':None}))
-        if self.conversation_data.counter != len(self.conversation_data.problem_set): _button.append(CardAction(type=ActionTypes.message_back, title='Next', value={'q_id':None, 'ans':'next'.upper(),'msg':None}))
+            _button.append(CardAction(type=ActionTypes.message_back, 
+                title=_this['key']+'. '+_this['value'],
+                text='{"q_id":{}, "ans":{}, "msg":"Answered with {}."}'.format(_question_id, _this['key'].upper(), _this['value']) \
+                    if turn_context.activity.channel_id=='facebook' else None,
+                display_text=_this['key']+'. '+_this['value'],
+                value={'q_id':_question_id, 'ans':_this['key'].upper(), 'msg':f"Answered with '{ _this['value'] }'."}))
+        if self.conversation_data.counter != 1: 
+            _button.append(CardAction(type=ActionTypes.message_back, 
+                title='Back', 
+                display_text='Back',
+                text='{"q_id":null, "ans":"BACK", "msg":null}' if turn_context.activity.channel_id=='facebook' else None,
+                value={'q_id':None, 'ans':'back'.upper(),'msg':None}))
+        if self.conversation_data.counter != len(self.conversation_data.problem_set): 
+            _button.append(CardAction(type=ActionTypes.message_back, 
+                title='Next', 
+                display_text='Next',
+                text='{"q_id":null, "ans":"NEXT", "msg":null}' if turn_context.activity.channel_id=='facebook' else None,
+                value={'q_id':None, 'ans':'next'.upper(),'msg':None}))
+
         card = HeroCard(
             title=f"Question '{ self.conversation_data.counter }'.",
             text=_question,
